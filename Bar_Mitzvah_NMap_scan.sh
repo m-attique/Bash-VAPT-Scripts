@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Default port
+PORT=443
+
 # Define color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -8,8 +11,8 @@ NC='\033[0m' # No Color
 # Function to scan a single host
 scan_host() {
     local host=$1
-    echo "Scanning $host for RC4 cipher suites..."
-    if nmap -p 443 --script ssl-enum-ciphers $host | grep -iq "RC4"; then
+    echo "Scanning $host on port $PORT for RC4 cipher suites..."
+    if nmap -p $PORT --script ssl-enum-ciphers $host | grep -iq "RC4"; then
         echo -e "${RED}Vulnerable to Bar Mitzvah: $host${NC}"
     else
         echo -e "${GREEN}NOT Vulnerable to Bar Mitzvah: $host${NC}"
@@ -17,16 +20,21 @@ scan_host() {
 }
 
 # Parse command line options
-while getopts ":iL:" opt; do
+while getopts ":iL:p:" opt; do
   case ${opt} in
     iL )
       input_list=$OPTARG
       ;;
+    p )
+      PORT=$OPTARG
+      ;;
     \? )
       echo "Invalid option: $OPTARG" 1>&2
+      exit 1
       ;;
     : )
       echo "Invalid option: $OPTARG requires an argument" 1>&2
+      exit 1
       ;;
   esac
 done
@@ -44,6 +52,6 @@ elif [ $# -gt 0 ]; then
         scan_host "$target"
     done
 else
-    echo "Usage: $0 [-iL input_list] <target1> <target2> ..."
+    echo "Usage: $0 [-p port] [-iL input_list] <target1> [target2] ..."
     exit 1
 fi
